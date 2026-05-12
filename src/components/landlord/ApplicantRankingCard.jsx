@@ -57,8 +57,8 @@ export function ApplicantRankingCard({ app, updateApplication }) {
             </div>
             <div className="flex flex-wrap gap-2"><Pill tone={riskTone}>{app.riskLevel} risk</Pill><Pill tone="gold">{score}% match</Pill></div>
           </div>
-          <p className="mt-3 rounded-2xl bg-white p-3 text-sm font-bold text-forest">This applicant appears to be {score >= 85 ? "a strong match" : "worth reviewing"}. Check the documents and affordability before making a decision.</p>
-          <div className="mt-4 grid gap-2 md:grid-cols-4"><Mini icon={BadgeCheck} label="Identity" value={app.tenant.verificationStatus} /><Mini icon={FileCheck2} label="Documents" value={app.documentsComplete ? "Complete" : "Missing"} /><Mini icon={TrendingUp} label="Affordability" value={`${score}%`} /><Mini icon={Clock} label="Status" value={(app.status || "review").replaceAll("_", " ")} /></div>
+          <p className="mt-3 rounded-2xl bg-white p-3 text-sm font-bold text-forest">This applicant appears to be {score >= 85 ? "a strong match" : "worth reviewing"}. Check the profile and affordability before making a decision.</p>
+          <div className="mt-4 grid gap-2 md:grid-cols-4"><Mini icon={BadgeCheck} label="Identity" value={app.tenant.verificationStatus} /><Mini icon={FileCheck2} label="Application" value={app.documentsComplete ? "Complete" : "Incomplete"} /><Mini icon={TrendingUp} label="Affordability" value={`${score}%`} /><Mini icon={Clock} label="Status" value={(app.status || "review").replaceAll("_", " ")} /></div>
           {shownNote ? <p className="mt-3 rounded-2xl border border-forest/10 bg-white p-3 text-sm font-bold text-forest">{shownNote}</p> : null}
         </div>
         <div className="flex flex-col justify-center gap-2 border-t border-forest/10 bg-white p-4 lg:border-l lg:border-t-0">

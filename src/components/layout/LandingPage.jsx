@@ -251,7 +251,7 @@ function LandingRentalCard({ listing, onClick }) {
             <span className="text-[#181818]/45">from <b className="text-[#181818]">{money(listing.priceAmount)}</b></span>
             <span className="rounded-full bg-[#f5f0e8] px-2.5 py-1 text-xs font-black text-[#181818]">★ {Number(listing.ratingAverage || 0).toFixed(1)}</span>
           </div>
-          <span className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-black/8 bg-[#181818] px-4 py-3 text-xs font-black uppercase tracking-wide text-white hover:bg-[#ed1c24]">
+          <span className="force-white mt-4 inline-flex w-full items-center justify-center rounded-xl border border-black/8 bg-[#ed1c24] px-4 py-3 text-xs font-black uppercase tracking-wide hover:bg-[#181818]">
             View property
           </span>
         </div>
@@ -261,7 +261,7 @@ function LandingRentalCard({ listing, onClick }) {
 }
 
 function ImageBadge({ children, tone = "dark" }) {
-  const style = tone === "gold" ? "bg-[#c9a84c] text-[#181818] border-[#c9a84c]" : "bg-black/72 text-white border-white/20";
+  const style = tone === "gold" ? "bg-[#c9a84c] text-[#181818] border-[#c9a84c]" : "bg-black/72 force-white border-white/20";
   return <span className={`rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide shadow-lg backdrop-blur ${style}`}>{children}</span>;
 }
 

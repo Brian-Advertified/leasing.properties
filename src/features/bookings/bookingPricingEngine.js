@@ -56,7 +56,7 @@ export const getBookingQuote = ({ listing, startDate, endDate, leaseMonths, work
   };
 };
 
-export const buildBookingRequest = ({ listing, userId, startDate, startTime = "10:00", quote, approvalPack }) => {
+export const buildBookingRequest = ({ listing, userId, startDate, startTime = "10:00", quote, approvalPack, applicationPack }) => {
   const startsAt = `${startDate}T${startTime}:00Z`;
   let endsAt = `${quote.endDate}T10:00:00Z`;
   if (quote.instant && (listing.priceUnit === "hour" || listing.duration === "hourly")) {
@@ -74,6 +74,6 @@ export const buildBookingRequest = ({ listing, userId, startDate, startTime = "1
     endsAt,
     quantity: quote.quantity,
     depositMonths: quote.instant ? 0 : 1,
-    applicationPack: quote.instant ? undefined : approvalPack
+    applicationPack: quote.instant ? undefined : (applicationPack || approvalPack)
   };
 };

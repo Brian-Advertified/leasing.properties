@@ -74,10 +74,10 @@ export const SectionTitle = ({ eyebrow, title, text, action }) => (
 
 export const PageHero = ({ eyebrow, title, text, children, compact = false }) => (
   <section
-    className={`relative overflow-hidden rounded-[2rem] border border-white/10 text-white shadow-premium ${compact ? "p-5" : "p-6 md:p-8"}`}
+    className={`force-white relative overflow-hidden rounded-[2rem] border border-white/10 text-white shadow-premium ${compact ? "p-5" : "p-6 md:p-8"}`}
     style={{
       background:
-        "radial-gradient(circle at 92% 8%, rgba(197,155,61,0.30), transparent 22rem), linear-gradient(135deg, #08241d 0%, #12382d 48%, #1f5f4a 100%)"
+        "radial-gradient(circle at 92% 8%, rgba(197,155,61,0.22), transparent 22rem), linear-gradient(135deg, #050505 0%, #181818 56%, #3a3324 100%)"
     }}
   >
     <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
@@ -85,8 +85,8 @@ export const PageHero = ({ eyebrow, title, text, children, compact = false }) =>
     <div className="relative z-10 grid gap-5 lg:grid-cols-[1fr_auto] lg:items-end">
       <div>
         {eyebrow ? <p className="text-xs font-black uppercase tracking-[0.24em] text-gold">{eyebrow}</p> : null}
-        <h1 className="mt-3 max-w-3xl text-3xl font-black leading-tight tracking-tight text-white md:text-5xl">{title}</h1>
-        {text ? <p className="mt-4 max-w-2xl text-sm leading-6 text-white/78 md:text-base">{text}</p> : null}
+        <h1 className="force-white mt-3 max-w-3xl text-3xl font-black leading-tight tracking-tight text-white md:text-5xl">{title}</h1>
+        {text ? <p className="force-muted-white mt-4 max-w-2xl text-sm leading-6 text-white/78 md:text-base">{text}</p> : null}
       </div>
       {children ? <div>{children}</div> : null}
     </div>
@@ -100,14 +100,14 @@ export const BackButton = ({ children = "Back", onClick }) => (
 );
 
 export const StatCard = ({ icon: Icon, label, value, text, tone = "light" }) => {
-  const isDark = tone === "dark" || tone === "green";
-  const bg = isDark ? "#12382d" : tone === "gold" ? "rgba(197,155,61,0.16)" : "#ffffff";
+  const isDark = tone === "dark";
+  const bg = isDark ? "#181818" : tone === "green" ? "rgba(18,56,45,0.06)" : tone === "gold" ? "rgba(197,155,61,0.16)" : "#ffffff";
   return (
     <Card className="p-4" style={{ backgroundColor: bg }}>
       {Icon ? <span className={`grid h-10 w-10 place-items-center rounded-2xl ${isDark ? "bg-white/10 text-gold" : "bg-gold/15 text-gold"}`}><Icon className="h-5 w-5" /></span> : null}
-      <p className={`mt-3 text-xs font-black uppercase tracking-wide ${isDark ? "text-white/45" : "text-ink/40"}`}>{label}</p>
-      <p className={`mt-1 text-2xl font-black capitalize ${isDark ? "text-white" : "text-forest"}`}>{value}</p>
-      {text ? <p className={`mt-1 text-xs leading-5 ${isDark ? "text-white/60" : "text-ink/55"}`}>{text}</p> : null}
+      <p className={`mt-3 text-xs font-black uppercase tracking-wide ${isDark ? "force-muted-white text-white/45" : "text-ink/40"}`}>{label}</p>
+      <p className={`mt-1 text-2xl font-black capitalize ${isDark ? "force-white text-white" : "text-forest"}`}>{value}</p>
+      {text ? <p className={`mt-1 text-xs leading-5 ${isDark ? "force-muted-white text-white/60" : "text-ink/55"}`}>{text}</p> : null}
     </Card>
   );
 };

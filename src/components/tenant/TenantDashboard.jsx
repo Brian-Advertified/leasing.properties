@@ -30,16 +30,16 @@ export function TenantDashboard({ dashboard, runAudit, setScreen, openTenantProc
       ) : (
         <>
           {gatewayCallback && <PaymentCallbackNotice callback={gatewayCallback} />}
-          <section className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-forest text-white shadow-premium">
+          <section className="force-white relative overflow-hidden rounded-[2rem] border border-white/60 bg-[#181818] text-white shadow-premium">
             <img src={listing.lowDataImageUrl || listing.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-28" />
-            <div className="absolute inset-0 bg-gradient-to-r from-forest via-forest/90 to-forest/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/90 to-black/35" />
             <div className="relative grid gap-6 p-5 md:grid-cols-[1.1fr_0.75fr] md:p-8">
               <div className="flex min-h-[320px] flex-col justify-between">
                 <div>
                   <div className="flex flex-wrap gap-2"><Pill tone="gold">Your rental journey</Pill><Pill tone="white">{human.title}</Pill></div>
-                  <h1 className="mt-5 max-w-2xl text-4xl font-black leading-[0.95] tracking-tight md:text-6xl">Your next home is moving forward.</h1>
-                  <p className="mt-4 max-w-xl text-base leading-7 text-white/75">{human.text}</p>
-                  <p className="mt-3 max-w-xl rounded-2xl bg-white/10 p-3 text-sm font-bold text-white/85">Next: {human.next}</p>
+                  <h1 className="force-white mt-5 max-w-2xl text-4xl font-black leading-[0.95] tracking-tight md:text-6xl">Your next home is moving forward.</h1>
+                  <p className="force-muted-white mt-4 max-w-xl text-base leading-7 text-white/75">{human.text}</p>
+                  <p className="force-white mt-3 max-w-xl rounded-2xl bg-white/10 p-3 text-sm font-bold text-white/85">Next: {human.next}</p>
                 </div>
                 <div className="mt-6 flex flex-wrap gap-3">
                   <Button variant="gold" onClick={() => goToTenantProcess(SCREEN_LEASE_PACK)}><FileText className="mr-2 h-4 w-4" /> View lease documents</Button>

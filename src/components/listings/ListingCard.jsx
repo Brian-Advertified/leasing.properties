@@ -43,6 +43,6 @@ export function ListingCard({ listing, onClick }) {
 }
 
 function ImageBadge({ label, icon, tone = "dark" }) {
-  const style = tone === "red" ? "border-[#ed1c24] bg-[#ed1c24] text-white" : "border-white/20 bg-black/70 text-white";
+  const style = tone === "red" ? "border-[#ed1c24] bg-[#ed1c24] force-white" : "border-white/20 bg-black/70 force-white";
   return <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wide shadow-lg backdrop-blur ${style}`}>{icon}{label}</span>;
 }

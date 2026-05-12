@@ -199,7 +199,7 @@ const sendBookingUpdate = async ({ booking, tenantTitle, tenantMessage, landlord
 
 const reservingBookingStatuses = new Set(["reserved", "approved", "awaiting_payment", "confirmed", "deposit_received", "deposit_secured", "active"]);
 
-const requiredApplicationPackFields = ["identityDocument", "proofOfResidence", "references", "bankStatement"];
+const requiredApplicationPackFields = ["applicantProfile", "affordability", "viewing"];
 
 const missingApplicationPackFields = (applicationPack = {}) =>
   requiredApplicationPackFields.filter((field) => !applicationPack[field]);
@@ -247,6 +247,9 @@ const listingWithOwner = (listing) => ({
 const fetchListingGallery = async (listing) => {
   // Keep demo images stable and avoid third-party thumbnail endpoints that often expire or return 404.
   // Production should replace this with stored, validated listing images from S3/Cloudinary.
+  if (Array.isArray(listing?.imageGallery) && listing.imageGallery.length) {
+    return listing.imageGallery;
+  }
   const primary = listing?.imageUrl || listing?.lowDataImageUrl;
   const lowData = listing?.lowDataImageUrl || listing?.imageUrl;
   return [{ medium: lowData, large: primary }].filter((item) => item.medium || item.large);
@@ -586,21 +589,25 @@ app.post("/api/bookings", async (req, res) => {
   if (!startsAt || !endsAt) return res.status(400).json({ error: "startsAt and endsAt are required" });
   const existingReservation = getListingReservation(listing.id);
   if (existingReservation) {
-    return res.status(409).json({
-      error: "This listing is already reserved.",
-      reservation: {
-        bookingId: existingReservation.id,
-        status: existingReservation.status,
-        paymentStatus: existingReservation.paymentStatus
-      }
-    });
+    if (existingReservation.tenantId !== tenantId) {
+      return res.status(409).json({
+        error: "This listing is already reserved.",
+        reservation: {
+          bookingId: existingReservation.id,
+          status: existingReservation.status,
+          paymentStatus: existingReservation.paymentStatus
+        }
+      });
+    }
+    const reservationIndex = bookings.findIndex((item) => item.id === existingReservation.id);
+    if (reservationIndex !== -1) bookings.splice(reservationIndex, 1);
   }
   const isLongTermLease = ["mid", "long", "monthly"].includes(listing.duration);
   if (isLongTermLease) {
     const missingFields = missingApplicationPackFields(applicationPack);
     if (missingFields.length) {
       return res.status(400).json({
-        error: "Approval documents are required before submitting a rental application.",
+        error: "Applicant profile, affordability and viewing status are required before submitting a rental application.",
         missingFields
       });
     }
@@ -636,7 +643,7 @@ app.post("/api/bookings", async (req, res) => {
     leaseContractGeneratedAt: null,
     leasePdfUrl: null,
     applicationPack: isLongTermLease ? applicationPack : null,
-    approvalStatus: isLongTermLease ? "documents_received" : "not_required"
+    approvalStatus: isLongTermLease ? "landlord_review_pending" : "not_required"
   };
   bookings.unshift(booking);
   const user = users.find((item) => item.id === tenantId);
@@ -646,9 +653,9 @@ app.post("/api/bookings", async (req, res) => {
       booking,
       type: notificationEvents.APPLICATION_SUBMITTED,
       tenantTitle: "Your rental application was sent",
-      tenantMessage: "We received your documents and sent the application to the landlord. We will let you know when the landlord replies.",
+      tenantMessage: "We received your profile and affordability details, then sent the application to the landlord. We will let you know when the landlord replies.",
       landlordTitle: "New rental application to review",
-      landlordMessage: `${user?.displayName || "A tenant"} applied for ${listing.title}. Please review the documents, affordability checks and next action.`,
+      landlordMessage: `${user?.displayName || "A tenant"} applied for ${listing.title}. Please review the profile, affordability checks and next action.`,
       actionLabel: "View application",
       priority: "high"
     });
@@ -656,7 +663,7 @@ app.post("/api/bookings", async (req, res) => {
       booking,
       pricing,
       next: "awaiting_landlord_review",
-      message: "Application submitted. Your documents were received and the landlord can now review your application."
+      message: "Application submitted. Your profile and affordability details were received and the landlord can now review your application."
     });
   }
   const payload = buildVodaPayPayload({ booking, listing, tenant: user || users[0] });
@@ -743,6 +750,58 @@ app.post("/api/payments/vodapay/initiate", async (req, res) => {
   } catch (error) {
     res.status(error.status === 500 ? 500 : 502).json({ ...vodapayErrorResponse(error), payload });
   }
+});
+
+app.post("/api/bookings/:id/vodapay-wallet/mock-fund", async (req, res) => {
+  const booking = bookings.find((item) => item.id === req.params.id);
+  if (!booking) return res.status(404).json({ error: "Booking not found" });
+  if (!["approved", "awaiting_payment", "deposit_received"].includes(booking.status)) {
+    return res.status(409).json({ error: "VodaPay wallet funding is available after landlord approval." });
+  }
+  const listing = listings.find((item) => item.id === booking.listingId);
+  const tenant = users.find((item) => item.id === booking.tenantId);
+  const walletAmount = booking.amountDue || (booking.depositAmount || 0) + (booking.serviceFee || 0);
+  const now = new Date().toISOString();
+  booking.status = "deposit_secured";
+  booking.paymentStatus = "paid";
+  booking.paymentMethod = "vodapay_wallet_mock";
+  booking.telcoChannel = "VodaPay Wallet";
+  booking.paymentConfirmedAt = now;
+  booking.depositStatus = "in_custody";
+  booking.custodyStatus = "reconciled";
+  booking.custodyProvider = "mock_vodapay_wallet";
+  booking.custodyReference = booking.custodyReference || `VPW-${booking.id.slice(0, 8).toUpperCase()}`;
+  booking.custodyReceivedAt = now;
+  booking.leaseContractStatus = "generated";
+  booking.leaseContractGeneratedAt = now;
+  booking.leasePdfUrl = booking.leasePdfUrl || `/api/bookings/${booking.id}/lease.pdf`;
+  booking.wallet = {
+    provider: "VodaPay",
+    mode: "mock",
+    status: "funded_and_paid",
+    fundedAmount: walletAmount,
+    availableBalance: 0,
+    reference: booking.custodyReference,
+    fundedAt: now
+  };
+
+  await sendBookingUpdate({
+    booking,
+    type: notificationEvents.PAYMENT_CONFIRMED,
+    tenantTitle: "VodaPay wallet funded",
+    tenantMessage: `Mock VodaPay wallet funding of R${walletAmount.toLocaleString("en-ZA")} was completed for ${listing?.title || "your rental"}.`,
+    landlordTitle: "VodaPay wallet payment received",
+    landlordMessage: `${tenant?.displayName || "The tenant"} completed the mock VodaPay wallet payment for ${listing?.title || "this rental"}.`,
+    actionLabel: "Open lease pack",
+    tenantRoute: "/lease-documents",
+    priority: "high"
+  });
+
+  res.json({
+    booking,
+    wallet: booking.wallet,
+    message: `Mock VodaPay wallet funded with R${walletAmount.toLocaleString("en-ZA")} and paid into deposit custody.`
+  });
 });
 
 app.post("/api/bookings/:id/custody/reconcile", (req, res) => {
@@ -836,16 +895,16 @@ const buildPropertyWorkspaceDashboard = (manager) => {
     .map((booking) => {
       const tenant = users.find((user) => user.id === booking.tenantId) || users[0];
       const listing = listingWithOwner(listings.find((item) => item.id === booking.listingId));
-      const documentsComplete = !missingApplicationPackFields(booking.applicationPack || {}).length;
+      const applicationComplete = !missingApplicationPackFields(booking.applicationPack || {}).length;
       return {
         ...booking,
         tenant: publicUser(tenant),
         listing,
         contact: listing.assignedContact,
-        documentsComplete,
+        documentsComplete: applicationComplete,
         affordabilityScore: listing.priceAmount <= 9000 ? 92 : 68,
-        riskLevel: documentsComplete && tenant.verificationStatus === "verified" ? "low" : "medium",
-        nextAction: documentsComplete ? "Review and approve, request info, or decline" : "Request missing documents"
+        riskLevel: applicationComplete && tenant.verificationStatus === "verified" ? "low" : "medium",
+        nextAction: applicationComplete ? "Review and approve, request info, or decline" : "Request applicant affordability details"
       };
     });
   const activeAssignments = managedListings.flatMap((listing) => (listing.assignments || []).map((assignment) => ({ ...assignment, listingTitle: listing.title })));

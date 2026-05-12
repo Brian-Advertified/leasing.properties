@@ -2,13 +2,12 @@ import React, { useMemo, useRef, useState } from "react";
 import { ArrowRight, BriefcaseBusiness, CalendarDays, CheckCircle2, DoorOpen, FileText, Home, MessageCircle, ShieldCheck, UserRound, Wallet } from "lucide-react";
 import { money } from "../../lib/formatters";
 import { buildBookingRequest, getBookingQuote, isShortStayBooking, isWorkspaceBooking } from "../../features/bookings/bookingPricingEngine";
-import { emptyApprovalPack, fileToDocumentMeta, getMissingApprovalDocuments, isApprovalPackComplete } from "../../features/applications/approvalPack";
 import { BackButton, Button, Field, inputClass, Pill, Rating, Verified } from "../common/Primitives";
 import { SCREEN_DISCOVER } from "../../app/constants/screens";
 import { QualificationPanel } from "../qualification/QualificationPanel";
 import { ReservationCard } from "../reservation/ReservationCard";
 import { ViewingWorkflow } from "../viewings/ViewingWorkflow";
-import { DocumentReadinessCard } from "../documents/DocumentReadinessCard";
+import { FinanceCalculator } from "../finance/FinanceCalculator";
 
 const addDays = (dateString, days) => {
   const date = new Date(`${dateString}T10:00:00`);
@@ -43,7 +42,7 @@ const getJourneyCopy = (listing) => {
     title: "Apply, get approved and move in without the clutter.",
     intro: "Create your account, complete the next action, and track the move-in process one step at a time.",
     primaryAction: "Start application",
-    steps: ["Apply", "Upload documents", "Get approved", "Pay deposit", "Move in"]
+    steps: ["Apply", "Budget check", "Viewing", "Get approved", "Move in"]
   };
 };
 
@@ -56,10 +55,10 @@ export function ListingDetail({ listing, setScreen, submitBooking, requestViewin
   const [workspaceHours, setWorkspaceHours] = useState(2);
   const [leaseMonths, setLeaseMonths] = useState(6);
   const [selectedViewingSlot, setSelectedViewingSlot] = useState(listing.viewingAvailability?.[0]?.slots?.[0]?.startsAt || "");
-  const [approvalPack, setApprovalPack] = useState(emptyApprovalPack);
-  const [monthlyIncome, setMonthlyIncome] = useState("");
+  const [affordability, setAffordability] = useState({ netIncome: "", expenses: {} });
   const [qualificationChecked, setQualificationChecked] = useState(false);
   const [reserved, setReserved] = useState(false);
+  const [viewingNotRequired, setViewingNotRequired] = useState(false);
   const [applicationOpen, setApplicationOpen] = useState(false);
   const [applicationStep, setApplicationStep] = useState("account");
   const [accountCreated, setAccountCreated] = useState(Boolean(currentUserId));
@@ -69,20 +68,18 @@ export function ListingDetail({ listing, setScreen, submitBooking, requestViewin
 
   const journey = useMemo(() => getJourneyCopy(listing), [listing]);
   const quote = useMemo(() => getBookingQuote({ listing, startDate, endDate, leaseMonths, workspaceHours }), [listing, startDate, endDate, leaseMonths, workspaceHours]);
-  const missing = useMemo(() => getMissingApprovalDocuments(approvalPack), [approvalPack]);
-  const approvalComplete = quote.instant || isApprovalPackComplete(approvalPack);
-  const canSubmitLongLease = accountCreated && profileComplete && qualificationChecked && reserved && approvalComplete;
+  const viewingComplete = viewingNotRequired || Boolean(viewingResult);
+  const canSubmitLongLease = accountCreated && profileComplete && qualificationChecked && reserved && viewingComplete;
   const canBookInstant = accountCreated && profileComplete;
 
-  const setDoc = (id, file) => setApprovalPack((current) => ({ ...current, [id]: fileToDocumentMeta(file) }));
   const viewing = () => requestViewing({ listingId: listing.id, tenantId: currentUserId, requestedAt: selectedViewingSlot, note: "I want to view this property before I apply." });
-  const book = () => submitBooking(buildBookingRequest({ listing, userId: currentUserId, startDate, startTime, quote, approvalPack }));
+  const book = () => submitBooking(buildBookingRequest({ listing, userId: currentUserId, startDate, startTime, quote, applicationPack: { applicantProfile, affordability, viewing: viewingNotRequired ? "not_required_or_already_viewed" : "requested" } }));
   const updateProfile = (field, value) => setApplicantProfile((current) => ({ ...current, [field]: value }));
 
   const openFlow = (target) => {
     setApplicationOpen(true);
     if (target) setApplicationStep(target);
-    else setApplicationStep(!accountCreated ? "account" : !profileComplete ? "profile" : quote.instant ? "confirm" : qualificationChecked ? (reserved ? (approvalComplete ? "submit" : "documents") : "reserve") : "qualify");
+    else setApplicationStep(!accountCreated ? "account" : !profileComplete ? "profile" : quote.instant ? "confirm" : qualificationChecked ? (reserved ? (viewingComplete ? "submit" : "viewing") : "reserve") : "qualify");
     window.setTimeout(() => applicationRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
   };
 
@@ -98,6 +95,20 @@ export function ListingDetail({ listing, setScreen, submitBooking, requestViewin
             <Verified label="Verified" />
             <Pill tone="white">{journey.badge}</Pill>
           </div>
+          {gallery.length > 1 ? (
+            <div className="modern-gallery-rail" aria-label="Property gallery">
+              {gallery.slice(0, 8).map((image, index) => {
+                const imageSrc = image.thumb || image.medium || image.large;
+                const targetSrc = image.large || image.medium || image.thumb;
+                const isSelected = targetSrc === selectedImage;
+                return (
+                  <button key={`${targetSrc}-${index}`} type="button" className={isSelected ? "is-selected" : ""} onClick={() => setSelectedImage(targetSrc)} aria-label={`Show gallery image ${index + 1}`}>
+                    <img src={imageSrc} alt="" loading="lazy" />
+                  </button>
+                );
+              })}
+            </div>
+          ) : null}
           <div className="modern-hero-copy">
             <p>{listing.suburb}, {listing.city}</p>
             <h1>{listing.title}</h1>
@@ -158,9 +169,9 @@ export function ListingDetail({ listing, setScreen, submitBooking, requestViewin
           {quote.instant ? (
             <InstantBookingFlow applicationStep={applicationStep} setApplicationStep={setApplicationStep} accountCreated={accountCreated} setAccountCreated={setAccountCreated} profileComplete={profileComplete} profile={applicantProfile} updateProfile={updateProfile} saveProfile={() => { setProfileComplete(true); setApplicationStep("confirm"); }} quote={quote} listing={listing} journey={journey} canBook={canBookInstant} submitting={bookingSubmitting} onBook={book} />
           ) : (
-            <LongLeaseFlow applicationStep={applicationStep} setApplicationStep={setApplicationStep} accountCreated={accountCreated} setAccountCreated={setAccountCreated} profileComplete={profileComplete} profile={applicantProfile} updateProfile={updateProfile} saveProfile={() => { setProfileComplete(true); setApplicationStep("qualify"); }} qualificationChecked={qualificationChecked} setQualificationChecked={setQualificationChecked} reserved={reserved} setReserved={setReserved} approvalComplete={approvalComplete} canSubmitLongLease={canSubmitLongLease} listing={listing} quote={quote} approvalPack={approvalPack} monthlyIncome={monthlyIncome} setMonthlyIncome={setMonthlyIncome} selectedViewingSlot={selectedViewingSlot} setSelectedViewingSlot={setSelectedViewingSlot} viewing={viewing} viewingResult={viewingResult} setDoc={setDoc} missing={missing} setScreen={setScreen} submitting={bookingSubmitting} book={book} />
+            <LongLeaseFlow applicationStep={applicationStep} setApplicationStep={setApplicationStep} accountCreated={accountCreated} setAccountCreated={setAccountCreated} profileComplete={profileComplete} profile={applicantProfile} updateProfile={updateProfile} saveProfile={() => { setProfileComplete(true); setApplicationStep("qualify"); }} qualificationChecked={qualificationChecked} setQualificationChecked={setQualificationChecked} reserved={reserved} setReserved={setReserved} viewingComplete={viewingComplete} canSubmitLongLease={canSubmitLongLease} listing={listing} quote={quote} affordability={affordability} setAffordability={setAffordability} selectedViewingSlot={selectedViewingSlot} setSelectedViewingSlot={setSelectedViewingSlot} viewing={viewing} viewingResult={viewingResult} viewingNotRequired={viewingNotRequired} setViewingNotRequired={setViewingNotRequired} setScreen={setScreen} submitting={bookingSubmitting} book={book} />
           )}
-          {bookingError ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-700">{bookingError}</p> : null}
+          {bookingError ? <p className="mt-4 rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-700">{bookingError.message || String(bookingError)}</p> : null}
           {bookingResult ? <p className="mt-4 rounded-2xl bg-emerald-50 p-3 text-sm font-bold text-emerald-800">Saved. Your next step is now on your dashboard.</p> : null}
         </section>
       ) : null}
@@ -176,34 +187,38 @@ export function ListingDetail({ listing, setScreen, submitBooking, requestViewin
         <div className="modern-help-card">
           <MessageCircle className="h-5 w-5 text-gold" />
           <h3>Need help?</h3>
-          <p>Ask the assigned contact about viewings, documents, payments or access before you continue.</p>
+          <p>Ask the assigned contact about viewings, payments or access before you continue.</p>
           <button type="button" onClick={() => openFlow("viewing")}>Message / arrange viewing</button>
           <button type="button" onClick={() => setScreen(SCREEN_DISCOVER)}>Browse other places</button>
         </div>
       </section>
+
+      {!quote.instant ? (
+        <section className="mt-5">
+          <FinanceCalculator listing={listing} quote={quote} />
+        </section>
+      ) : null}
     </div>
   );
 }
 
 function LongLeaseFlow(props) {
-  const { applicationStep, setApplicationStep, accountCreated, setAccountCreated, profileComplete, profile, updateProfile, saveProfile, qualificationChecked, setQualificationChecked, reserved, setReserved, approvalComplete, canSubmitLongLease, listing, quote, approvalPack, monthlyIncome, setMonthlyIncome, selectedViewingSlot, setSelectedViewingSlot, viewing, viewingResult, setDoc, missing, setScreen, submitting, book } = props;
+  const { applicationStep, setApplicationStep, accountCreated, setAccountCreated, profileComplete, profile, updateProfile, saveProfile, qualificationChecked, setQualificationChecked, reserved, setReserved, viewingComplete, canSubmitLongLease, listing, quote, affordability, setAffordability, selectedViewingSlot, setSelectedViewingSlot, viewing, viewingResult, viewingNotRequired, setViewingNotRequired, setScreen, submitting, book } = props;
   return <>
     <StepTabs>
       <StepTab active={applicationStep === "account"} done={accountCreated} onClick={() => setApplicationStep("account")}>Account</StepTab>
       <StepTab active={applicationStep === "profile"} done={profileComplete} disabled={!accountCreated} onClick={() => setApplicationStep("profile")}>Your details</StepTab>
       <StepTab active={applicationStep === "qualify"} done={qualificationChecked} disabled={!accountCreated || !profileComplete} onClick={() => setApplicationStep("qualify")}>Budget</StepTab>
       <StepTab active={applicationStep === "reserve"} done={reserved} disabled={!qualificationChecked} onClick={() => setApplicationStep("reserve")}>Reserve</StepTab>
-      <StepTab active={applicationStep === "viewing"} disabled={!reserved} onClick={() => setApplicationStep("viewing")}>Viewing</StepTab>
-      <StepTab active={applicationStep === "documents"} done={approvalComplete} disabled={!reserved} onClick={() => setApplicationStep("documents")}>Documents</StepTab>
+      <StepTab active={applicationStep === "viewing"} done={viewingComplete} disabled={!reserved} onClick={() => setApplicationStep("viewing")}>Viewing</StepTab>
       <StepTab active={applicationStep === "submit"} disabled={!canSubmitLongLease} onClick={() => setApplicationStep("submit")}>Submit</StepTab>
     </StepTabs>
     <div className="modern-step-body">
       {applicationStep === "account" ? <AccountStep created={accountCreated} onCreate={() => { setAccountCreated(true); setApplicationStep("profile"); }} /> : null}
       {applicationStep === "profile" ? <ProfileStep profile={profile} setProfile={updateProfile} complete={profileComplete} onSave={saveProfile} /> : null}
-      {applicationStep === "qualify" ? <QualificationPanel listing={listing} quote={quote} approvalPack={approvalPack} monthlyIncome={monthlyIncome} setMonthlyIncome={setMonthlyIncome} checked={qualificationChecked} setChecked={(checked) => { setQualificationChecked(checked); if (checked) setApplicationStep("reserve"); }} onShowAlternatives={() => { setScreen(SCREEN_DISCOVER); }} compact /> : null}
+      {applicationStep === "qualify" ? <QualificationPanel listing={listing} quote={quote} affordability={affordability} setAffordability={setAffordability} checked={qualificationChecked} setChecked={(checked) => { setQualificationChecked(checked); if (checked) setApplicationStep("reserve"); }} onShowAlternatives={() => { setScreen(SCREEN_DISCOVER); }} compact /> : null}
       {applicationStep === "reserve" ? <ReservationCard reserved={reserved} disabled={!qualificationChecked} onReserve={() => { setReserved(true); setApplicationStep("viewing"); }} compact /> : null}
-      {applicationStep === "viewing" ? <ViewingWorkflow availability={listing.viewingAvailability} selectedSlot={selectedViewingSlot} setSelectedSlot={setSelectedViewingSlot} onRequest={viewing} result={viewingResult} compact /> : null}
-      {applicationStep === "documents" ? <DocumentReadinessCard approvalPack={approvalPack} setDoc={setDoc} missing={missing} compact /> : null}
+      {applicationStep === "viewing" ? <ViewingWorkflow availability={listing.viewingAvailability} selectedSlot={selectedViewingSlot} setSelectedSlot={setSelectedViewingSlot} onRequest={viewing} result={viewingResult} viewingNotRequired={viewingNotRequired} setViewingNotRequired={(checked) => { setViewingNotRequired(checked); if (checked) setApplicationStep("submit"); }} compact /> : null}
       {applicationStep === "submit" ? <SubmitBox canSubmit={canSubmitLongLease} submitting={submitting} onSubmit={book} /> : null}
     </div>
   </>;
@@ -225,7 +240,7 @@ function InstantBookingFlow({ applicationStep, setApplicationStep, accountCreate
 }
 
 function AccountStep({ created, onCreate }) {
-  return <div className="modern-inner-panel"><p className="modern-eyebrow">Create account</p><h4>Save your journey before you continue</h4><p>Your account keeps applications, bookings, documents and messages in one secure place.</p><div className="modern-mini-grid"><MiniStep icon={UserRound} title="Your profile" text="Add contact details once." /><MiniStep icon={FileText} title="Your documents" text="Upload only when needed." /><MiniStep icon={ShieldCheck} title="Your status" text="Track every next step." /></div><Button className="mt-5 px-5 py-3" onClick={onCreate}>{created ? "Continue" : "Create account and continue"}<ArrowRight className="ml-2 h-4 w-4" /></Button></div>;
+  return <div className="modern-inner-panel"><p className="modern-eyebrow">Create account</p><h4>Save your journey before you continue</h4><p>Your account keeps applications, bookings, affordability and messages in one secure place.</p><div className="modern-mini-grid"><MiniStep icon={UserRound} title="Your profile" text="Add contact details once." /><MiniStep icon={FileText} title="Affordability" text="Capture income and expenses." /><MiniStep icon={ShieldCheck} title="Your status" text="Track every next step." /></div><Button className="mt-5 px-5 py-3" onClick={onCreate}>{created ? "Continue" : "Create account and continue"}<ArrowRight className="ml-2 h-4 w-4" /></Button></div>;
 }
 
 function ProfileStep({ profile, setProfile, complete, onSave }) {
@@ -237,7 +252,7 @@ function ConfirmBox({ quote, listing, canBook, submitting, onBook }) {
 }
 
 function SubmitBox({ canSubmit, submitting, onSubmit }) {
-  return <div className="modern-inner-panel"><p className="modern-eyebrow">Final step</p><h4>Ready to send your application</h4><p>We’ll send your move-in date, lease term, documents and affordability details to the assigned property contact.</p><Button className="mt-5 px-5 py-3" disabled={!canSubmit || submitting} onClick={onSubmit}>{submitting ? "Submitting..." : "Submit application"}<ArrowRight className="ml-2 h-4 w-4" /></Button></div>;
+  return <div className="modern-inner-panel"><p className="modern-eyebrow">Final step</p><h4>Ready to send your application</h4><p>Submitting creates the rental application, sends your profile, affordability summary, lease dates and viewing status to the assigned property contact, and puts the application on your dashboard for landlord review.</p><Button className="mt-5 px-5 py-3" disabled={!canSubmit || submitting} onClick={onSubmit}>{submitting ? "Submitting..." : "Submit application"}<ArrowRight className="ml-2 h-4 w-4" /></Button></div>;
 }
 
 function StepTabs({ children }) { return <div className="modern-step-tabs">{children}</div>; }
@@ -246,6 +261,6 @@ function TimelineStep({ number, label, active }) { return <div className={`moder
 function SoftStat({ label, value }) { return <div className="modern-soft-stat"><span>{label}</span><strong>{value}</strong></div>; }
 function MiniStep({ icon: Icon, title, text }) { return <div className="modern-mini-step"><Icon className="h-5 w-5" /><div><strong>{title}</strong><span>{text}</span></div></div>; }
 function stepLabel(step, type) {
-  const labels = { account: "Create account", profile: type === "workspace" ? "Company details" : type === "short" ? "Guest details" : "Your details", qualify: "Budget check", reserve: "Reserve home", viewing: "Book viewing", documents: "Upload documents", submit: "Submit application", confirm: "Pay and confirm" };
+  const labels = { account: "Create account", profile: type === "workspace" ? "Company details" : type === "short" ? "Guest details" : "Your details", qualify: "Budget check", reserve: "Reserve home", viewing: "Viewing", submit: "Submit application", confirm: "Pay and confirm" };
   return labels[step] || "Next step";
 }

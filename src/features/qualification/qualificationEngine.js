@@ -5,35 +5,52 @@ export const REQUIRED_LONG_LEASE_DOCUMENTS = [
   { id: "proofOfIncome", label: "Proof of income", reason: "Gives the landlord confidence." }
 ];
 
-export function getQualificationEstimate({ listing, quote, approvalPack = {}, monthlyIncome = 0 }) {
+export const AFFORDABILITY_EXPENSES = [
+  { id: "rentOrBond", label: "Current rent or bond" },
+  { id: "foodAndGroceries", label: "Food and groceries" },
+  { id: "transport", label: "Transport and fuel" },
+  { id: "utilities", label: "Electricity, water and rates" },
+  { id: "insuranceMedical", label: "Insurance, medical aid and healthcare" },
+  { id: "schoolDependants", label: "School fees and dependants" },
+  { id: "creditCommitments", label: "Loans, credit cards and store accounts" },
+  { id: "otherCommitted", label: "Other monthly commitments" }
+];
+
+const sumValues = (values = {}) =>
+  Object.values(values).reduce((total, value) => total + (Number(value) || 0), 0);
+
+export function getQualificationEstimate({ listing, quote, approvalPack = {}, monthlyIncome = 0, affordability = {} }) {
   const requiredIncome = quote?.recommendedIncome || (listing?.priceAmount || 0) * 3;
-  const incomeScore = monthlyIncome ? Math.min(Math.round((monthlyIncome / Math.max(requiredIncome, 1)) * 45), 45) : 25;
-  const uploadedCount = REQUIRED_LONG_LEASE_DOCUMENTS.filter((doc) => approvalPack[doc.id]).length;
-  const documentScore = Math.round((uploadedCount / REQUIRED_LONG_LEASE_DOCUMENTS.length) * 35);
+  const netIncome = Number(affordability.netIncome || monthlyIncome) || 0;
+  const totalExpenses = sumValues(affordability.expenses);
+  const disposableIncome = Math.max(netIncome - totalExpenses, 0);
+  const rentBuffer = (listing?.priceAmount || 0) * 1.15;
+  const incomeScore = netIncome ? Math.min(Math.round((netIncome / Math.max(requiredIncome, 1)) * 35), 35) : 12;
+  const disposableScore = disposableIncome ? Math.min(Math.round((disposableIncome / Math.max(rentBuffer, 1)) * 45), 45) : 0;
   const trustScore = listing?.verified ? 10 : 0;
   const neatStockScore = listing?.neatStock ? 10 : 0;
-  const score = Math.min(100, incomeScore + documentScore + trustScore + neatStockScore);
+  const score = Math.min(100, incomeScore + disposableScore + trustScore + neatStockScore);
   const missingDocuments = REQUIRED_LONG_LEASE_DOCUMENTS.filter((doc) => !approvalPack[doc.id]);
 
-  let label = "A few things are still needed";
+  let label = "Affordability needs work";
   let tone = "gold";
-  let guidance = "Upload the missing documents and confirm your income range before applying.";
+  let guidance = "Add your income and monthly commitments so we can estimate whether the rent leaves enough room for essentials.";
 
   if (score >= 80) {
-    label = "Strong application";
+    label = "Strong affordability";
     tone = "green";
-    guidance = "You look ready to apply. The landlord will still make the final decision.";
+    guidance = "Your estimated disposable income looks comfortable for this rental. The property contact still makes the final decision.";
   } else if (score >= 60) {
     label = "Good start";
     tone = "green";
-    guidance = "You can continue, but completing the documents will improve your chances.";
+    guidance = "You can continue, but keep your committed expenses realistic before submitting.";
   } else if (score < 45) {
     label = "Not ready yet";
     tone = "danger";
-    guidance = "This home may be difficult to approve right now. We can show lower-cost options too.";
+    guidance = "This home may be difficult to approve right now. Lower-cost options may be easier.";
   }
 
-  return { score, label, tone, guidance, requiredIncome, uploadedCount, missingDocuments };
+  return { score, label, tone, guidance, requiredIncome, netIncome, totalExpenses, disposableIncome, missingDocuments };
 }
 
 export function getPropertyTrust(listing) {
