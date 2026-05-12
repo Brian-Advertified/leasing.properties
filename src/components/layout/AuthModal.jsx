@@ -37,6 +37,7 @@ const accountTypes = [
 export function AuthModal({ mode, setMode, completeAuth }) {
   const defaultForm = { phoneNumber: "+27821234567", displayName: "Amina Dlamini", city: "Johannesburg", otp: "123456", role: "tenant" };
   const [step, setStep] = useState("details");
+  const [authType, setAuthType] = useState(mode === "register" ? "register" : "login");
   const [form, setForm] = useState(defaultForm);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -44,6 +45,7 @@ export function AuthModal({ mode, setMode, completeAuth }) {
   useEffect(() => {
     if (!mode) return;
     setStep("details");
+    setAuthType(mode === "register" ? "register" : "login");
     setForm(defaultForm);
     setMessage("");
     setError("");
@@ -81,10 +83,28 @@ export function AuthModal({ mode, setMode, completeAuth }) {
       <Card className="w-full max-w-lg p-5">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-forest">{mode === "register" ? "Create your profile" : "Sign in with phone"}</h2>
-            <p className="mt-1 text-sm text-ink/60">Choose the profile that matches what you need to do. Each profile only sees the right tools.</p>
+            <h2 className="text-2xl font-black text-forest">{authType === "register" ? "Create your profile" : "Sign in with phone"}</h2>
+            <p className="mt-1 text-sm text-ink/60">Sign in if you already have a profile, or create one if this is your first time here.</p>
           </div>
           <button onClick={() => { setStep("details"); setMode(null); }} className="rounded-full p-2 hover:bg-forest/5"><X className="h-5 w-5" /></button>
+        </div>
+
+
+        <div className="mb-4 grid grid-cols-2 rounded-2xl bg-[#f5f0e8] p-1">
+          <button
+            type="button"
+            onClick={() => { setAuthType("login"); setStep("details"); setMessage(""); setError(""); }}
+            className={`rounded-xl px-4 py-2 text-sm font-black transition ${authType === "login" ? "bg-[#12382d] text-white shadow-sm" : "text-[#13231c]/65 hover:bg-white"}`}
+          >
+            Sign in
+          </button>
+          <button
+            type="button"
+            onClick={() => { setAuthType("register"); setStep("details"); setMessage(""); setError(""); }}
+            className={`rounded-xl px-4 py-2 text-sm font-black transition ${authType === "register" ? "bg-[#12382d] text-white shadow-sm" : "text-[#13231c]/65 hover:bg-white"}`}
+          >
+            Create profile
+          </button>
         </div>
 
         {step === "details" ? (
@@ -110,14 +130,14 @@ export function AuthModal({ mode, setMode, completeAuth }) {
 
         <form onSubmit={step === "details" ? requestOtp : verifyOtp} className="grid gap-3">
           <Field label="Phone number"><input className={inputClass} value={form.phoneNumber} onChange={(e) => setForm({ ...form, phoneNumber: e.target.value })} /></Field>
-          {mode === "register" && step === "details" ? <>
+          {authType === "register" && step === "details" ? <>
             <Field label="Display name"><input className={inputClass} value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} /></Field>
             <Field label="City"><input className={inputClass} value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} /></Field>
           </> : null}
           {step === "otp" ? <Field label="Demo OTP"><input className={inputClass} value={form.otp} onChange={(e) => setForm({ ...form, otp: e.target.value })} /></Field> : null}
           {message ? <p className="rounded-2xl bg-forest/5 p-3 text-sm text-forest">{message}</p> : null}
           {error ? <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-          <Button type="submit">{step === "details" ? "Send OTP" : "Verify and continue"}</Button>
+          <Button type="submit">{step === "details" ? (authType === "register" ? "Create profile and send OTP" : "Send OTP") : "Verify and continue"}</Button>
         </form>
       </Card>
     </div>

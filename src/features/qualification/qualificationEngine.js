@@ -2,7 +2,7 @@ export const REQUIRED_LONG_LEASE_DOCUMENTS = [
   { id: "identityDocument", label: "South African ID or passport", reason: "Confirms who is applying." },
   { id: "bankStatement", label: "Latest 3 months bank statements", reason: "Helps confirm affordability." },
   { id: "proofOfResidence", label: "Proof of address", reason: "Used for verification and lease records." },
-  { id: "references", label: "Rental reference or employer contact", reason: "Gives the landlord confidence." }
+  { id: "proofOfIncome", label: "Proof of income", reason: "Gives the landlord confidence." }
 ];
 
 export function getQualificationEstimate({ listing, quote, approvalPack = {}, monthlyIncome = 0 }) {

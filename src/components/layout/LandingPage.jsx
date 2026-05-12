@@ -98,14 +98,14 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
               Transforming Africa’s <span className="text-[#c9a84c]">Property Market.</span>
             </h1>
             <p className="mt-5 max-w-xl text-sm leading-7 text-white/68 md:text-base">
-              Bridging property access and finance through leasing.properties. A cleaner distribution layer for quality residential, commercial and flexible spaces.
+              Bringing property access and finance through leasing.properties. Residential, commercial and flexible spaces in one clean marketplace.
             </p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
               <button onClick={runSearch} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#ed1c24] px-6 py-3 text-sm font-black text-white shadow-[0_18px_44px_rgba(237,28,36,0.28)] hover:bg-[#ff343d]">
                 Browse marketplace <ArrowRight className="h-4 w-4" />
               </button>
               <button onClick={() => setAuthMode?.("register")} className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/18 bg-white/8 px-6 py-3 text-sm font-black text-white hover:bg-white/14">
-                Learn about Smart Rent Pay
+                Get Rental Deposit Finance
               </button>
             </div>
           </div>
@@ -122,11 +122,11 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
               </div>
             </div>
 
-            <form onSubmit={runSearch} className="relative -mt-12 mx-3 rounded-[1.45rem] border border-black/10 bg-white p-5 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:absolute md:-bottom-8 md:left-[-1.5rem] md:mx-0 md:mt-0 md:w-[29rem]">
-              <p className="text-sm font-black uppercase tracking-[0.18em] text-[#ed1c24]">Start your search</p>
-              <div className="mt-4 grid grid-cols-3 gap-1.5 rounded-full bg-[#f1ece3] p-1.5 text-xs font-black">
+            <form onSubmit={runSearch} className="relative -mt-12 mx-3 rounded-[1.65rem] border border-black/10 bg-white p-5 shadow-[0_24px_70px_rgba(0,0,0,0.22)] md:absolute md:-bottom-8 md:left-[-1.5rem] md:mx-0 md:mt-0 md:w-[30rem]">
+              <p className="text-[0.82rem] font-black uppercase tracking-[0.22em] text-[#ed1c24]">Start your search</p>
+              <div className="mt-4 grid grid-cols-3 gap-2 rounded-[1.1rem] bg-[#f4efe6] p-2 text-xs font-black">
                 {rentalTabs.map((item) => (
-                  <button type="button" key={item.id} onClick={() => setTab(item.id)} className={`rounded-full px-3 py-2.5 transition ${tab === item.id ? "bg-[#111] text-white" : "text-[#181818]/56 hover:text-[#181818]"}`}>
+                  <button type="button" key={item.id} onClick={() => setTab(item.id)} className={`rounded-[0.9rem] px-3 py-3 transition ${tab === item.id ? "bg-[#111] text-white shadow-[0_10px_22px_rgba(0,0,0,0.18)]" : "bg-white/70 text-[#181818]/70 hover:bg-white hover:text-[#181818]"}`}>
                     {item.label}
                   </button>
                 ))}
@@ -135,12 +135,12 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
                 Area
                 <div className="relative mt-1">
                   <Search className="absolute left-3 top-4 h-4 w-4 text-[#181818]/35" />
-                  <input className="h-12 w-full rounded-xl border border-black/10 bg-[#fbfaf7] pl-10 pr-3 text-sm text-[#181818] outline-none placeholder:text-[#181818]/35 focus:border-[#ed1c24]" placeholder="Suburb, city or building" value={quickSearch.location} onChange={(event) => updateQuickSearch("location", event.target.value)} />
+                  <input className="h-13 min-h-[52px] w-full rounded-2xl border border-black/10 bg-[#fbfaf7] pl-10 pr-3 text-sm font-semibold text-[#181818] outline-none placeholder:text-[#181818]/38 focus:border-[#ed1c24]" placeholder="Suburb, city or building" value={quickSearch.location} onChange={(event) => updateQuickSearch("location", event.target.value)} />
                 </div>
               </label>
               <div className="mt-3 grid grid-cols-[1fr_auto] gap-2">
-                <input className="h-12 rounded-xl border border-black/10 bg-[#fbfaf7] px-3 text-sm text-[#181818] outline-none placeholder:text-[#181818]/35 focus:border-[#ed1c24]" placeholder="Max rent" inputMode="numeric" value={quickSearch.maxPrice} onChange={(event) => updateQuickSearch("maxPrice", event.target.value)} />
-                <button type="submit" className="rounded-xl bg-[#ed1c24] px-6 text-sm font-black text-white hover:bg-[#111]">Search</button>
+                <input className="h-13 min-h-[52px] rounded-2xl border border-black/10 bg-[#fbfaf7] px-4 text-sm font-semibold text-[#181818] outline-none placeholder:text-[#181818]/38 focus:border-[#ed1c24]" placeholder="Max rent" inputMode="numeric" value={quickSearch.maxPrice} onChange={(event) => updateQuickSearch("maxPrice", event.target.value)} />
+                <button type="submit" className="rounded-2xl bg-[#ed1c24] px-7 text-sm font-black text-white shadow-[0_14px_30px_rgba(237,28,36,0.24)] hover:bg-[#111]">Search</button>
               </div>
             </form>
           </div>
@@ -150,7 +150,7 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
       <main>
         <section className="bg-[#f5f0e8] px-4 py-14 md:px-8 md:py-20">
           <div className="mx-auto max-w-6xl">
-            <SectionHeading eyebrow="Curated inventory" title="Residential, commercial and flexible spaces in one clean marketplace." text="Quality listings can be discovered, compared and acted on without showing tenant-only, landlord-only or support-only tools to the wrong person." />
+            <SectionHeading eyebrow="Curated inventory" title="A cleaner distribution layer for quality residential, commercial and flexible spaces."/>
             <div className="mt-8 grid gap-5 md:grid-cols-3">
               {featuredListings.map((listing) => <LandingRentalCard key={listing.id} listing={listing} onClick={() => openFeaturedListing(listing)} />)}
             </div>
@@ -174,7 +174,7 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
           <div className="mx-auto grid max-w-6xl gap-8 md:grid-cols-[0.9fr_1.1fr] md:items-center">
             <div>
               <p className="text-[11px] font-black uppercase tracking-[0.24em] text-[#c9a84c]">Finance engine</p>
-              <h2 className="mt-3 text-3xl font-black tracking-[-0.055em] md:text-5xl">leasing.properties: Transforming inventory into revenue.</h2>
+              <h2 className="mt-3 text-3xl font-black tracking-[-0.055em] md:text-5xl">leasing.properties Transforming inventory into revenue.</h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-white/60">leasing.properties turns verified rental inventory into active demand by combining discovery, applications, payment readiness and structured marketplace oversight.</p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
                 <button className="rounded-full bg-[#ed1c24] px-5 py-3 text-sm font-black text-white hover:bg-[#ff343d]" onClick={() => setAuthMode?.("register")}>Explore marketplace</button>
@@ -194,9 +194,9 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
           <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-[0.8fr_1.2fr] md:items-start">
             <SectionHeading eyebrow="Platform controls" title="A marketplace built around verified access and managed leasing journeys." text="The public journey stays simple, while listing owners and operators manage applications, documents and communication in the correct workspace." />
             <div className="grid gap-4 md:grid-cols-2">
-              <TrustCard title="Verified marketplace" text="Tenants browse and apply without seeing landlord, agent or support tools." />
+              <TrustCard title="Verified marketplace" text="Tenants browse and apply for verified properties and services." />
               <TrustCard title="Structured applications" text="Application, document and approval steps stay visible to the correct user." />
-              <TrustCard title="Curated onboarding" text="Landlords and agents can be vetted before listings go live." />
+              <TrustCard title="Curated onboarding" text="Landlords, Agents and Properties are vetted before listings go live." />
               <TrustCard title="Rent-ready conversion" text="The platform supports deposit, approval and move-in steps without cluttering the rental journey." />
             </div>
           </div>

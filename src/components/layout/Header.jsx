@@ -1,5 +1,5 @@
 import React from "react";
-import { Building2, LayoutDashboard, LogIn, PlusCircle, Search, ShieldCheck, UserPlus } from "lucide-react";
+import { Building2, Download, LayoutDashboard, LogIn, PlusCircle, Search, ShieldCheck } from "lucide-react";
 import { NotificationCenter } from "../notifications/NotificationCenter";
 import { BrandLogo } from "../ui/DesignSystem";
 import { SCREEN_ADMIN, SCREEN_DASHBOARD, SCREEN_DISCOVER, SCREEN_LANDING, SCREEN_LANDLORD, SCREEN_NEW_PROPERTY } from "../../app/constants/screens";
@@ -23,6 +23,8 @@ const homeScreenByRole = {
 };
 
 export function Header({ screen, setScreen, auth, role = "tenant", setAuthMode, signOut, notifications = [], unreadCount = 0, onOpenNotification, onMarkAllRead }) {
+  const vodaPayDownloadUrl = "https://vodapay.vodacom.co.za/vodapay/personal/home";
+  const openVodaPayDownload = () => window.open(vodaPayDownloadUrl, "_blank", "noopener,noreferrer");
   const isLanding = screen === SCREEN_LANDING;
   const normalizedRole = ["landlord", "admin"].includes(role) ? role : "tenant";
   const nav = auth?.user ? navByRole[normalizedRole] : [];
@@ -35,7 +37,7 @@ export function Header({ screen, setScreen, auth, role = "tenant", setAuthMode, 
 
   return (
     <header className={`${isLanding ? "fixed inset-x-0 top-0 border-white/10 bg-black/70 text-white" : "sticky top-0 border-white/10 bg-black text-white shadow-sm"} z-40 border-b backdrop-blur-md`}>
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 md:px-8">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 md:px-8">
         <button className="flex min-w-0 items-center gap-3 text-left" onClick={() => setScreen(homeScreen)}>
           <BrandLogo />
         </button>
@@ -66,7 +68,7 @@ export function Header({ screen, setScreen, auth, role = "tenant", setAuthMode, 
           ) : (
             <>
               <button className={`${isLanding ? "border-white/10 bg-white/10 text-white hover:bg-white/20" : "text-white hover:bg-[#ed1c24]/5"} hidden rounded-2xl border px-4 py-2 text-sm font-black transition sm:inline-flex`} onClick={() => setAuthMode("login")}><LogIn className="mr-2 h-4 w-4" /> Sign in</button>
-              <button className={`${isLanding ? "bg-[#ed1c24] text-white hover:bg-[#ef4224]" : "bg-[#ed1c24] text-white hover:bg-[#1f5f4a]"} inline-flex items-center rounded-2xl px-4 py-2 text-sm font-black transition`} onClick={() => setAuthMode("register")}><UserPlus className="mr-2 h-4 w-4" /> Join</button>
+              <button className={`${isLanding ? "bg-[#ed1c24] text-white hover:bg-[#ef4224]" : "bg-[#ed1c24] text-white hover:bg-[#ef4224]"} inline-flex items-center rounded-2xl px-4 py-2 text-sm font-black transition`} onClick={openVodaPayDownload} title="Download VodaPay"><Download className="mr-2 h-4 w-4" /> Get VodaPay</button>
             </>
           )}
         </div>

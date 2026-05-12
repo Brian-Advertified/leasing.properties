@@ -91,7 +91,7 @@ export const fallbackLandlordDashboard = {
         identityDocument: true,
         proofOfIncome: true,
         bankStatement: true,
-        references: true
+        proofOfIncome: true
       }
     },
     {
@@ -122,7 +122,7 @@ export const fallbackLandlordDashboard = {
         identityDocument: true,
         proofOfIncome: false,
         bankStatement: false,
-        references: true
+        proofOfIncome: true
       }
     }
   ]

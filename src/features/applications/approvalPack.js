@@ -10,8 +10,8 @@ export const APPROVAL_DOCUMENTS = [
     description: "Municipal bill, lease letter, bank letter, or verified address document."
   },
   {
-    id: "references",
-    label: "References",
+    id: "proofOfIncome",
+    label: "Proof of income",
     description: "Previous landlord, employer, or trusted rental reference."
   },
   {

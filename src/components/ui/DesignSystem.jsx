@@ -45,8 +45,8 @@ export function PageSection({ eyebrow, title, text, tone = "dark", className = "
 export function BrandLogo({ compact = false }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-white/10 bg-[#111] text-white shadow-sm">
-        <svg width="28" height="28" viewBox="0 0 52 50" aria-hidden="true">
+      <span className="grid h-12 w-12 shrink-0 place-items-center rounded-[1.05rem] border border-white/15 bg-[#111] text-white shadow-[0_10px_30px_rgba(0,0,0,0.35)]">
+        <svg width="34" height="34" viewBox="0 0 52 50" aria-hidden="true">
           <path d="M2 34 L26 6 L50 34" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
           <rect x="13" y="37" width="11" height="11" rx="2" fill="#C9A84C" />
           <rect x="28" y="37" width="11" height="11" rx="2" fill="#C9A84C" />
@@ -54,8 +54,8 @@ export function BrandLogo({ compact = false }) {
       </span>
       {!compact ? (
         <span className="min-w-0">
-          <span className="block truncate text-base font-normal tracking-[-0.04em] text-white">leasing<span className="font-black text-[#c9a84c]">.</span>properties</span>
-          <span className="hidden truncate text-xs text-white/45 sm:block">Verified rentals made simple</span>
+          <span className="block truncate text-[1.08rem] font-semibold leading-none tracking-[-0.045em] text-white">leasing<span className="font-black text-[#c9a84c]">.</span>properties</span>
+          <span className="hidden truncate pt-1 text-[0.72rem] leading-none text-white/55 sm:block">Verified rentals made simple</span>
         </span>
       ) : null}
     </div>
