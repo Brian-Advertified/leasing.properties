@@ -14,7 +14,7 @@ import { LandlordDashboard } from "./components/landlord/LandlordDashboard";
 import { AdminOpsDashboard } from "./components/admin/AdminOpsDashboard";
 import { NewPropertyPage } from "./components/property/NewPropertyPage";
 import { LeaseAudit } from "./components/lease/LeaseAudit";
-import { defaultUserId } from "./app/config/env";
+import { demoUserId } from "./app/config/env";
 import { SCREEN_ADMIN, SCREEN_AUDIT, SCREEN_DASHBOARD, SCREEN_DETAIL, SCREEN_DISCOVER, SCREEN_LANDING, SCREEN_LANDLORD, SCREEN_LEASE_PACK, SCREEN_MESSAGE_LANDLORD, SCREEN_MOVE_IN, SCREEN_NEW_PROPERTY } from "./app/constants/screens";
 import { getFiltersForIntent } from "./features/discovery/rentalIntents";
 import { clearStoredAuth, getStoredAuth, storeAuth } from "./features/auth/authSession";
@@ -142,7 +142,7 @@ function App() {
   const [authMode, setAuthMode] = useState(null);
   const [gatewayCallback] = useState(initialCallback);
   const [notifications, setNotifications] = useState({ items: [], unreadCount: 0 });
-  const currentUserId = auth?.user?.id || defaultUserId;
+  const currentUserId = auth?.user?.id || null;
   const currentRole = normalizeRole(auth?.user?.role);
   const activeBooking = useMemo(() => {
     return selectedBooking || dashboard?.bookings?.[0] || null;

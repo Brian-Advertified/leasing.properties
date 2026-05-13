@@ -681,7 +681,7 @@ app.post("/api/bookings", async (req, res) => {
       message: "Application submitted. Your profile and affordability details were received and the landlord can now review your application."
     });
   }
-  const payload = buildVodaPayPayload({ booking, listing, tenant: user || { id: booking.tenantId, displayName: "Tenant", phoneNumber: "unknown" } });
+  const payload = buildVodaPayPayload({ booking, listing, tenant: user || { id: booking.tenantId || "local-guest-tenant", displayName: "Tenant", phoneNumber: "" } });
   let gatewayResponse;
   try {
     gatewayResponse = await callVodaPayInitiate(payload);
@@ -953,9 +953,9 @@ app.get("/api/landlords/:id/dashboard", (req, res) => {
 
 app.post("/api/properties", (req, res) => {
   const owner = users.find((user) => user.id === req.body.ownerId) || users.find((user) => user.role === "landlord") || {
-    id: req.body.ownerId || crypto.randomUUID(),
-    displayName: req.body.ownerName || "Registered landlord",
+    id: req.body.ownerId || nanoid(),
     phoneNumber: req.body.ownerPhone || "",
+    displayName: req.body.ownerName || "Registered landlord",
     emailAddress: req.body.ownerEmail || "",
     role: "landlord",
     city: req.body.city || "Johannesburg",

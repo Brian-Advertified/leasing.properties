@@ -1,4 +1,31 @@
-export const users = [];
+export const users = [
+  {
+    id: "44444444-4444-4444-4444-444444444444",
+    phoneNumber: "+27110888000",
+    displayName: "AFHCO Property Management",
+    emailAddress: "leasing@example.com",
+    role: "landlord",
+    city: "Johannesburg",
+    verificationStatus: "verified",
+    ratingAverage: 4.5,
+    ratingCount: 325,
+    rewardPoints: 0
+  },
+  {
+    id: "66666666-6666-6666-6666-666666666666",
+    phoneNumber: "+27825550111",
+    displayName: "Sarah Mokoena",
+    emailAddress: "sarah.agent@example.com",
+    role: "agent",
+    city: "Johannesburg",
+    verificationStatus: "verified",
+    ratingAverage: 4.9,
+    ratingCount: 74,
+    rewardPoints: 0,
+    responseTime: "2 hours"
+  }
+];
+
 
 export const agencies = [
   {

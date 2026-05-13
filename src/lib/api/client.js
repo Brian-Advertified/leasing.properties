@@ -13,8 +13,8 @@ const publicUser = (user) => user?.id ? {
   responseTime: user.responseTime
 } : null;
 
-const createLocalUser = ({ phoneNumber, role = "tenant", displayName, city }) => ({
-  id: crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`,
+const createLocalUser = ({ phoneNumber = "", role = "tenant", displayName, city } = {}) => ({
+  id: typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `local-user-${Date.now()}`,
   phoneNumber,
   displayName: displayName || "leasing.properties user",
   role,
@@ -86,7 +86,7 @@ const filterListings = (path) => {
 };
 
 const tenantDashboardFor = (userId) => {
-  const user = users.find((item) => item.id === userId) || createLocalUser({ phoneNumber: "local", role: "tenant", displayName: "leasing.properties user" });
+  const user = users.find((item) => item.id === userId) || createLocalUser({ role: "tenant" });
   const userBookings = bookings
     .filter((booking) => booking.tenantId === user.id)
     .map((booking) => ({ ...booking, listing: listingWithOwner(listings.find((item) => item.id === booking.listingId)) }));
@@ -125,7 +125,7 @@ const createLocalBooking = (payload = {}) => {
   const booking = {
     id: `local-booking-${Date.now()}`,
     listingId: listing.id,
-    tenantId: payload.tenantId || demoUserId,
+    tenantId: payload.tenantId || "local-guest-tenant",
     startsAt: payload.startsAt || new Date().toISOString(),
     endsAt: payload.endsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: isLongTerm ? "awaiting_landlord_review" : "confirmed",
@@ -162,7 +162,7 @@ const createLocalBooking = (payload = {}) => {
 const localApplicationActions = new Map();
 const localNotifications = [];
 
-const demoUserId = "11111111-1111-1111-1111-111111111111";
+const demoUserId = "local-guest-tenant";
 const demoLandlordId = "44444444-4444-4444-4444-444444444444";
 
 const addLocalNotification = ({ userId = demoUserId, role = "tenant", type = "local_update", title, message, actionLabel = "Open update", actionRoute = "/dashboard" }) => {
@@ -322,7 +322,7 @@ const localResponseFor = (path, options = {}) => {
       ratingAverage: 0,
       reviewCount: 0,
       imageUrl: "",
-      assignedContact: body.managedByType === "landlord" ? fallbackLandlordDashboard.landlord : { displayName: body.assignedAgentName || "Assigned contact", role: body.managedByType || "agent", verificationStatus: "pending", assignmentRole: "listing_agent" }
+      assignedContact: body.managedByType === "landlord" ? fallbackLandlordDashboard.landlord : { id: `local-assigned-${Date.now()}`, displayName: body.assignedAgentName || "Assigned contact", role: body.managedByType || "agent", verificationStatus: "pending", assignmentRole: "listing_agent" }
     };
     fallbackLandlordDashboard.listings = [listing, ...fallbackLandlordDashboard.listings];
     return { listing, workspace: fallbackLandlordDashboard };
