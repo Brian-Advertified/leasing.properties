@@ -73,7 +73,7 @@ const filterListings = (path) => {
 };
 
 const tenantDashboardFor = (userId) => {
-  const user = users.find((item) => item.id === userId) || users[0];
+  const user = users.find((item) => item.id === userId) || { id: userId, role: "tenant", displayName: "New tenant", city: "", verificationStatus: "pending", ratingAverage: 0, ratingCount: 0, rewardPoints: 0 };
   const userBookings = bookings
     .filter((booking) => booking.tenantId === user.id)
     .map((booking) => ({ ...booking, listing: listingWithOwner(listings.find((item) => item.id === booking.listingId)) }));
@@ -90,16 +90,28 @@ const tenantDashboardFor = (userId) => {
 
 const localAuthResponse = (form = {}) => {
   const role = form.role || "tenant";
-  const phoneNumber = form.phoneNumber || "+27821234567";
-  const existing = users.find((item) => item.phoneNumber === phoneNumber || item.role === role) || users[0];
+  const phoneNumber = String(form.phoneNumber || "").trim();
+  const existing = users.find((item) => item.phoneNumber === phoneNumber);
+
+  if (existing) {
+    if (form.displayName) existing.displayName = form.displayName;
+    if (form.city) existing.city = form.city;
+    return { token: `local-token-${existing.id}`, user: publicUser(existing) };
+  }
+
   const user = {
-    ...publicUser(existing),
-    role,
+    id: `local-user-${Date.now()}`,
     phoneNumber,
-    displayName: form.displayName || existing.displayName || "leasing.properties user",
-    city: form.city || existing.city || "Johannesburg"
+    displayName: form.displayName || "New user",
+    role,
+    city: form.city || "",
+    verificationStatus: "pending",
+    ratingAverage: 0,
+    ratingCount: 0,
+    rewardPoints: 0
   };
-  return { token: "local-static-demo-token", user };
+  users.push(user);
+  return { token: `local-token-${user.id}`, user: publicUser(user) };
 };
 
 const createLocalBooking = (payload = {}) => {
@@ -111,7 +123,7 @@ const createLocalBooking = (payload = {}) => {
   const booking = {
     id: `local-booking-${Date.now()}`,
     listingId: listing.id,
-    tenantId: payload.tenantId || demoUserId,
+    tenantId: payload.tenantId || payload.userId || "local-tenant",
     startsAt: payload.startsAt || new Date().toISOString(),
     endsAt: payload.endsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
     status: isLongTerm ? "awaiting_landlord_review" : "confirmed",
@@ -148,10 +160,7 @@ const createLocalBooking = (payload = {}) => {
 const localApplicationActions = new Map();
 const localNotifications = [];
 
-const demoUserId = "11111111-1111-1111-1111-111111111111";
-const demoLandlordId = "44444444-4444-4444-4444-444444444444";
-
-const addLocalNotification = ({ userId = demoUserId, role = "tenant", type = "local_update", title, message, actionLabel = "Open update", actionRoute = "/dashboard" }) => {
+const addLocalNotification = ({ userId = "local-user", role = "tenant", type = "local_update", title, message, actionLabel = "Open update", actionRoute = "/dashboard" }) => {
   const item = {
     id: `local-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     userId,
@@ -214,7 +223,7 @@ const localResponseFor = (path, options = {}) => {
   }
 
   if (path === "/auth/otp/request") {
-    return { message: "Demo OTP sent. Use 123456 to continue." };
+    return { message: "OTP sent. Use the configured development OTP while SMS delivery is not connected." };
   }
 
   if (path === "/auth/otp/verify") {
@@ -228,13 +237,13 @@ const localResponseFor = (path, options = {}) => {
   if (path === "/viewings" && options?.method === "POST") {
     const body = JSON.parse(options.body || "{}");
     const listing = listingWithOwner(listings.find((item) => item.id === body.listingId) || listings[0]);
-    addLocalNotification({ userId: body.tenantId || demoUserId, role: "tenant", type: "viewing_requested", title: "Viewing request sent", message: `Your viewing request for ${listing.title} was sent.`, actionLabel: "Open dashboard", actionRoute: "/dashboard" });
+    addLocalNotification({ userId: body.tenantId || body.userId || "local-tenant", role: "tenant", type: "viewing_requested", title: "Viewing request sent", message: `Your viewing request for ${listing.title} was sent.`, actionLabel: "Open dashboard", actionRoute: "/dashboard" });
     return { viewing: { id: `local-viewing-${Date.now()}`, ...body, status: "requested" }, message: `Viewing requested for ${listing.title}.` };
   }
 
   const mockFundMatch = path.match(/^\/bookings\/([^/]+)\/vodapay-wallet\/mock-fund$/);
   if (mockFundMatch && options?.method === "POST") {
-    return { booking: { id: mockFundMatch[1], paymentStatus: "paid", depositStatus: "received", status: "deposit_secured" }, message: "Payment recorded for this demo booking." };
+    return { booking: { id: mockFundMatch[1], paymentStatus: "paid", depositStatus: "received", status: "deposit_secured" }, message: "Payment recorded for this booking." };
   }
 
   const moveInMatch = path.match(/^\/bookings\/([^/]+)\/move-in-checklist$/);
@@ -329,8 +338,8 @@ const localResponseFor = (path, options = {}) => {
       "request-info": ["More information requested", "The tenant has been notified that more information is needed."],
       decline: ["Application declined", "The tenant has been notified and can continue searching."]
     }[action];
-    addLocalNotification({ userId: demoUserId, role: "tenant", type: `application_${action}`, title: copy[0], message: copy[1], actionLabel: action === "decline" ? "Find another rental" : "Open update", actionRoute: action === "decline" ? "/discover" : "/dashboard" });
-    addLocalNotification({ userId: demoLandlordId, role: "landlord", type: `application_${action}`, title: copy[0], message: copy[1], actionLabel: "Open landlord workspace", actionRoute: "/landlords" });
+    addLocalNotification({ userId: application.tenantId || "local-tenant", role: "tenant", type: `application_${action}`, title: copy[0], message: copy[1], actionLabel: action === "decline" ? "Find another rental" : "Open update", actionRoute: action === "decline" ? "/discover" : "/dashboard" });
+    addLocalNotification({ userId: application.ownerId || "local-landlord", role: "landlord", type: `application_${action}`, title: copy[0], message: copy[1], actionLabel: "Open landlord workspace", actionRoute: "/landlords" });
     return { application };
   }
 
@@ -341,8 +350,8 @@ export const api = async (path, options) => {
   const localFirst = localResponseFor(path, options);
 
   // Amplify is currently hosting the React app as a static frontend, so there is no
-  // Express /api server behind the domain. Use the bundled demo data first to avoid
-  // visible 404s for listings, dashboards, auth, applications, payments and messages.
+  // Express /api server behind the domain. Local fallbacks keep the static build usable
+  // when the API is unavailable; they no longer pre-fill or reuse seed users.
   if (localFirst) {
     return Promise.resolve(localFirst);
   }

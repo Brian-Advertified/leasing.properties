@@ -177,12 +177,12 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
               <h2 className="mt-3 text-3xl font-black tracking-[-0.055em] md:text-5xl">leasing.properties Transforming inventory into revenue.</h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-white/60">leasing.properties turns verified rental inventory into active demand by combining discovery, applications, payment readiness and structured marketplace oversight.</p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <button className="rounded-full bg-[#ed1c24] px-5 py-3 text-sm font-black text-white hover:bg-[#ff343d]" onClick={runSearch}>Explore marketplace</button>
+                <button className="rounded-full bg-[#ed1c24] px-5 py-3 text-sm font-black text-white hover:bg-[#ff343d]" onClick={() => setScreen(SCREEN_DISCOVER)}>Explore marketplace</button>
                 <button className="rounded-full border border-white/16 px-5 py-3 text-sm font-black text-white hover:bg-white/10" onClick={() => setAuthMode?.("login")}>Sign in</button>
               </div>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <PartnerPoint icon={Building2} title="100% Deposit Finance" text="Converts qualified demand into accessible leasing opportunities without slowing down the application journey." />
+              <PartnerPoint icon={Building2} title="Tenant deposit finance" text="Deposit finance is shown only to tenants. Landlords and agents manage listings and applications in their own workspace." />
               <PartnerPoint icon={UserRoundCheck} title="95% Risk Accuracy" text="Supports stronger applicant visibility and structured verification before approvals move forward." />
               <PartnerPoint icon={ClipboardCheck} title="Finance Calculator" text="Helps users understand monthly affordability, deposits and move-in readiness." />
               <PartnerPoint icon={MapPin} title="Revenue Readiness" text="Keeps each property connected to the right landlord or agent from enquiry to approval." />

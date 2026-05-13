@@ -19,7 +19,8 @@ import {
 
 const app = express();
 const port = process.env.PORT || 4000;
-const jwtSecret = process.env.JWT_SECRET || "demo-secret-change-me";
+const jwtSecret = process.env.JWT_SECRET || "change-me-before-production";
+const developmentOtp = process.env.DEV_OTP || "123456";
 const galleryCache = new Map();
 const vodapayConfig = {
   baseUrl: process.env.VODAPAY_BASE_URL || "https://api.vodapaygatewayuat.vodacom.co.za/v2",
@@ -245,7 +246,7 @@ const listingWithOwner = (listing) => ({
 });
 
 const fetchListingGallery = async (listing) => {
-  // Keep demo images stable and avoid third-party thumbnail endpoints that often expire or return 404.
+  // Keep listing images stable and avoid third-party thumbnail endpoints that often expire or return 404.
   // Production should replace this with stored, validated listing images from S3/Cloudinary.
   if (Array.isArray(listing?.imageGallery) && listing.imageGallery.length) {
     return listing.imageGallery;
@@ -429,21 +430,21 @@ app.post("/api/auth/otp/request", (req, res) => {
   res.json({
     requestId: nanoid(),
     delivery: "sms_stub",
-    message: "Demo OTP is 123456. Production should use a local SMS aggregator per market."
+    message: process.env.SMS_PROVIDER_ENABLED === "true" ? "OTP sent." : "OTP sent. SMS is not connected in this environment, so use the configured development OTP."
   });
 });
 
 app.post("/api/auth/otp/verify", (req, res) => {
   const { phoneNumber, otp, displayName, city, role = "tenant" } = req.body;
-  if (otp !== "123456") return res.status(401).json({ error: "Invalid demo OTP" });
+  if (otp !== developmentOtp) return res.status(401).json({ error: "Invalid OTP" });
   let user = users.find((item) => item.phoneNumber === phoneNumber);
   if (!user) {
     user = {
       id: nanoid(),
       phoneNumber,
-      displayName: `Member ${phoneNumber.slice(-4)}`,
+      displayName: displayName || `Member ${phoneNumber.slice(-4)}`,
       role: ["tenant", "landlord", "agent", "agency", "property_manager", "admin"].includes(role) ? role : "tenant",
-      city: "",
+      city: city || "",
       verificationStatus: "pending",
       ratingAverage: 0,
       ratingCount: 0,
@@ -460,7 +461,8 @@ app.post("/api/auth/otp/verify", (req, res) => {
 app.post("/api/telco/sso", (req, res) => {
   const { msisdn, telco = "unknown", externalSessionId } = req.body;
   if (!msisdn) return res.status(400).json({ error: "msisdn is required" });
-  const user = users.find((item) => item.phoneNumber === msisdn) || users[0];
+  const user = users.find((item) => item.phoneNumber === msisdn);
+  if (!user) return res.status(404).json({ error: "User not registered" });
   const token = jwt.sign({ sub: user.id, msisdn, telco }, jwtSecret, { expiresIn: "2h" });
   res.json({
     token,
@@ -523,7 +525,8 @@ app.get("/api/listings/:id/qualification-estimate", (req, res) => {
 });
 
 app.post("/api/reservations", (req, res) => {
-  const { listingId, tenantId = users[0].id, holdHours = 48 } = req.body;
+  const { listingId, tenantId, holdHours = 48 } = req.body;
+  if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
   const listing = listings.find((item) => item.id === listingId);
   if (!listing) return res.status(404).json({ error: "Listing not found" });
   const existingReservation = getListingReservation(listing.id);
@@ -583,7 +586,8 @@ app.get("/api/listings/:id/viewing-availability", (req, res) => {
 });
 
 app.post("/api/bookings", async (req, res) => {
-  const { listingId, tenantId = users[0].id, startsAt, endsAt, quantity = 1, depositMonths = 0, applicationPack } = req.body;
+  const { listingId, tenantId, startsAt, endsAt, quantity = 1, depositMonths = 0, applicationPack } = req.body;
+  if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
   const listing = listings.find((item) => item.id === listingId);
   if (!listing) return res.status(404).json({ error: "Listing not found" });
   if (!startsAt || !endsAt) return res.status(400).json({ error: "startsAt and endsAt are required" });
@@ -666,7 +670,7 @@ app.post("/api/bookings", async (req, res) => {
       message: "Application submitted. Your profile and affordability details were received and the landlord can now review your application."
     });
   }
-  const payload = buildVodaPayPayload({ booking, listing, tenant: user || users[0] });
+  const payload = buildVodaPayPayload({ booking, listing, tenant: user });
   let gatewayResponse;
   try {
     gatewayResponse = await callVodaPayInitiate(payload);
@@ -689,7 +693,8 @@ app.post("/api/bookings", async (req, res) => {
 });
 
 app.post("/api/viewings", async (req, res) => {
-  const { listingId, tenantId = users[0].id, requestedAt, note = "" } = req.body;
+  const { listingId, tenantId, requestedAt, note = "" } = req.body;
+  if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
   const listing = listings.find((item) => item.id === listingId);
   if (!listing) return res.status(404).json({ error: "Listing not found" });
   if (!requestedAt) return res.status(400).json({ error: "requestedAt is required" });
@@ -893,7 +898,7 @@ const buildPropertyWorkspaceDashboard = (manager) => {
   const applications = bookings
     .filter((booking) => listingIds.has(booking.listingId))
     .map((booking) => {
-      const tenant = users.find((user) => user.id === booking.tenantId) || users[0];
+      const tenant = users.find((user) => user.id === booking.tenantId);
       const listing = listingWithOwner(listings.find((item) => item.id === booking.listingId));
       const applicationComplete = !missingApplicationPackFields(booking.applicationPack || {}).length;
       return {

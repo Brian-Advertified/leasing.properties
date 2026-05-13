@@ -1,5 +1,5 @@
-export const demoUserId =
-  import.meta.env.REACT_APP_DEMO_USER_ID || "11111111-1111-1111-1111-111111111111";
+export const defaultUserId =
+  import.meta.env.REACT_APP_DEFAULT_USER_ID || "local-tenant";
 
 export const authStorageKey = "listingPropertiesAuth";
 

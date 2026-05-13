@@ -27,7 +27,7 @@ export function MessageLandlordPage({ booking, currentUserId, setScreen }) {
       const response = await api(`/bookings/${booking.id}/messages`, { method: "POST", body: JSON.stringify({ tenantId: currentUserId, action: selectedAction, message }) });
       setResult(response);
     } catch (error) {
-      console.warn("Message API did not respond. Showing local sent confirmation for demo flow.", error);
+      console.warn("Message API did not respond. Showing local sent confirmation because the API did not respond.", error);
       setResult({
         message: {
           id: `local-${Date.now()}`,
