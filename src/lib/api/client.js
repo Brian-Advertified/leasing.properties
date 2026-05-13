@@ -2,7 +2,7 @@ import { fallbackAdminDashboard, fallbackLandlordDashboard } from "../../data/fa
 import { agencies, bookings, listings, propertyAssignments, ratings, rewardEvents, users, vouchers } from "../../../server/data";
 
 
-const publicUser = (user) => user ? {
+const publicUser = (user) => user?.id ? {
   id: user.id,
   displayName: user.displayName,
   role: user.role,
@@ -13,9 +13,22 @@ const publicUser = (user) => user ? {
   responseTime: user.responseTime
 } : null;
 
+const createLocalUser = ({ phoneNumber, role = "tenant", displayName, city }) => ({
+  id: crypto.randomUUID ? crypto.randomUUID() : `local-${Date.now()}`,
+  phoneNumber,
+  displayName: displayName || "leasing.properties user",
+  role,
+  city: city || "Johannesburg",
+  verificationStatus: "pending",
+  ratingAverage: 0,
+  ratingCount: 0,
+  rewardPoints: 0,
+  responseTime: "New user"
+});
+
 const assignmentsForListing = (listingId) => propertyAssignments
   .filter((assignment) => assignment.propertyId === listingId)
-  .map((assignment) => ({ ...assignment, user: publicUser(users.find((user) => user.id === assignment.assignedUserId) || {}) }));
+  .map((assignment) => ({ ...assignment, user: publicUser(users.find((user) => user.id === assignment.assignedUserId)) }));
 
 const assignedContactForListing = (listing) => {
   const assignment = assignmentsForListing(listing?.id)[0];
@@ -73,7 +86,7 @@ const filterListings = (path) => {
 };
 
 const tenantDashboardFor = (userId) => {
-  const user = users.find((item) => item.id === userId) || users[0];
+  const user = users.find((item) => item.id === userId) || createLocalUser({ phoneNumber: "local", role: "tenant", displayName: "leasing.properties user" });
   const userBookings = bookings
     .filter((booking) => booking.tenantId === user.id)
     .map((booking) => ({ ...booking, listing: listingWithOwner(listings.find((item) => item.id === booking.listingId)) }));
@@ -90,16 +103,17 @@ const tenantDashboardFor = (userId) => {
 
 const localAuthResponse = (form = {}) => {
   const role = form.role || "tenant";
-  const phoneNumber = form.phoneNumber || "+27821234567";
-  const existing = users.find((item) => item.phoneNumber === phoneNumber || item.role === role) || users[0];
-  const user = {
-    ...publicUser(existing),
-    role,
-    phoneNumber,
-    displayName: form.displayName || existing.displayName || "leasing.properties user",
-    city: form.city || existing.city || "Johannesburg"
-  };
-  return { token: "local-static-demo-token", user };
+  const phoneNumber = form.phoneNumber || "";
+  let existing = users.find((item) => item.phoneNumber === phoneNumber);
+  if (!existing) {
+    existing = createLocalUser({ phoneNumber, role, displayName: form.displayName, city: form.city });
+    users.push(existing);
+  } else {
+    existing.role = role || existing.role || "tenant";
+    existing.displayName = form.displayName || existing.displayName || "leasing.properties user";
+    existing.city = form.city || existing.city || "Johannesburg";
+  }
+  return { token: "local-static-token", user: publicUser(existing) };
 };
 
 const createLocalBooking = (payload = {}) => {
