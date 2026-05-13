@@ -35,9 +35,10 @@ const accountTypes = [
 ];
 
 export function AuthModal({ mode, setMode, completeAuth }) {
+  const isTenantFinanceMode = mode === "tenant-finance";
   const defaultForm = { phoneNumber: "+27821234567", displayName: "Amina Dlamini", city: "Johannesburg", otp: "123456", role: "tenant" };
   const [step, setStep] = useState("details");
-  const [authType, setAuthType] = useState(mode === "register" ? "register" : "login");
+  const [authType, setAuthType] = useState(mode === "register" || mode === "tenant-finance" ? "register" : "login");
   const [form, setForm] = useState(defaultForm);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -45,13 +46,16 @@ export function AuthModal({ mode, setMode, completeAuth }) {
   useEffect(() => {
     if (!mode) return;
     setStep("details");
-    setAuthType(mode === "register" ? "register" : "login");
+    setAuthType(mode === "register" || mode === "tenant-finance" ? "register" : "login");
     setForm(defaultForm);
     setMessage("");
     setError("");
   }, [mode]);
 
+  const visibleAccountTypes = isTenantFinanceMode ? accountTypes.filter((item) => item.role === "tenant") : accountTypes;
+
   const chooseRole = (role) => {
+    if (isTenantFinanceMode && role !== "tenant") return;
     const selected = accountTypes.find((item) => item.role === role);
     setForm({ ...form, ...selected.demo, role });
     setMessage("");
@@ -83,14 +87,14 @@ export function AuthModal({ mode, setMode, completeAuth }) {
       <Card className="w-full max-w-lg p-5">
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-black text-forest">{authType === "register" ? "Create your profile" : "Sign in with phone"}</h2>
-            <p className="mt-1 text-sm text-ink/60">Sign in if you already have a profile, or create one if this is your first time here.</p>
+            <h2 className="text-2xl font-black text-forest">{isTenantFinanceMode ? "Apply for rental deposit finance" : authType === "register" ? "Create your profile" : "Sign in with phone"}</h2>
+            <p className="mt-1 text-sm text-ink/60">{isTenantFinanceMode ? "This journey is only for tenants applying for rental deposit finance." : "Sign in if you already have a profile, or create one if this is your first time here."}</p>
           </div>
           <button onClick={() => { setStep("details"); setMode(null); }} className="rounded-full p-2 hover:bg-forest/5"><X className="h-5 w-5" /></button>
         </div>
 
 
-        <div className="mb-4 grid grid-cols-2 rounded-2xl bg-[#f5f0e8] p-1">
+        {!isTenantFinanceMode ? <div className="mb-4 grid grid-cols-2 rounded-2xl bg-[#f5f0e8] p-1">
           <button
             type="button"
             onClick={() => { setAuthType("login"); setStep("details"); setMessage(""); setError(""); }}
@@ -105,11 +109,11 @@ export function AuthModal({ mode, setMode, completeAuth }) {
           >
             Create profile
           </button>
-        </div>
+        </div> : null}
 
         {step === "details" ? (
           <div className="mb-4 grid gap-2 sm:grid-cols-3">
-            {accountTypes.map(({ role, label, helper, icon: Icon }) => {
+            {visibleAccountTypes.map(({ role, label, helper, icon: Icon }) => {
               const active = form.role === role;
               return (
                 <button
@@ -137,7 +141,7 @@ export function AuthModal({ mode, setMode, completeAuth }) {
           {step === "otp" ? <Field label="Demo OTP"><input className={inputClass} value={form.otp} onChange={(e) => setForm({ ...form, otp: e.target.value })} /></Field> : null}
           {message ? <p className="rounded-2xl bg-forest/5 p-3 text-sm text-forest">{message}</p> : null}
           {error ? <p className="rounded-2xl bg-red-50 p-3 text-sm text-red-700">{error}</p> : null}
-          <Button type="submit">{step === "details" ? (authType === "register" ? "Create profile and send OTP" : "Send OTP") : "Verify and continue"}</Button>
+          <Button type="submit">{step === "details" ? (isTenantFinanceMode ? "Start finance application" : authType === "register" ? "Create profile and send OTP" : "Send OTP") : "Verify and continue"}</Button>
         </form>
       </Card>
     </div>

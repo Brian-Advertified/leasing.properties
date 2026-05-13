@@ -104,7 +104,7 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
               <button onClick={runSearch} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#ed1c24] px-6 py-3 text-sm font-black text-white shadow-[0_18px_44px_rgba(237,28,36,0.28)] hover:bg-[#ff343d]">
                 Browse marketplace <ArrowRight className="h-4 w-4" />
               </button>
-              <button onClick={() => setAuthMode?.("register")} className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/18 bg-white/8 px-6 py-3 text-sm font-black text-white hover:bg-white/14">
+              <button onClick={() => setAuthMode?.("tenant-finance")} className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/18 bg-white/8 px-6 py-3 text-sm font-black text-white hover:bg-white/14">
                 Get Rental Deposit Finance
               </button>
             </div>
@@ -177,7 +177,7 @@ export function LandingPage({ listings, setScreen, setAuthMode, applyFilters, op
               <h2 className="mt-3 text-3xl font-black tracking-[-0.055em] md:text-5xl">leasing.properties Transforming inventory into revenue.</h2>
               <p className="mt-4 max-w-xl text-sm leading-7 text-white/60">leasing.properties turns verified rental inventory into active demand by combining discovery, applications, payment readiness and structured marketplace oversight.</p>
               <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-                <button className="rounded-full bg-[#ed1c24] px-5 py-3 text-sm font-black text-white hover:bg-[#ff343d]" onClick={() => setAuthMode?.("register")}>Explore marketplace</button>
+                <button className="rounded-full bg-[#ed1c24] px-5 py-3 text-sm font-black text-white hover:bg-[#ff343d]" onClick={runSearch}>Explore marketplace</button>
                 <button className="rounded-full border border-white/16 px-5 py-3 text-sm font-black text-white hover:bg-white/10" onClick={() => setAuthMode?.("login")}>Sign in</button>
               </div>
             </div>
